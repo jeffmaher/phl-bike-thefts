@@ -25,7 +25,7 @@ def json_response(response_obj):
     return HttpResponse(response, mimetype='application/json', content_type='application/json; charset=utf8')
 
 
-def get_locations(latitude, longitude, mile_radius):
+def get_locations(latitude, longitude, mile_radius, start_date, end_date, start_hour, end_hour):
     latitude_diff = mile_radius * MILE_PER_DEGREE_LATITUDE
     upper_bound_latitude = latitude + latitude_diff
     lower_bound_latitude = latitude - latitude_diff
@@ -38,6 +38,17 @@ def get_locations(latitude, longitude, mile_radius):
                                         latitude__gte=lower_bound_latitude,
                                         longitude__lte=upper_bound_longitude,
                                         longitude__gte=lower_bound_longitude)
+
+    if start_date and not end_date:
+        locations = locations.filter(date__gte=start_date.date())
+    elif start_date and end_date:
+        locations = locations.filter(date__gte=start_date.date(), date__lte=end_date.date())
+    elif end_date and not start_date:
+        locations = locations.filter(date__lte=end_date.date())
+
+    if start_hour and end_hour:
+        locations = locations.filter(hour__gte=start_hour).filter(hour__lte=end_hour)
+
     return locations
 
 
@@ -50,9 +61,10 @@ def location_to_point(location):
             "crime_id": location.crime_key,
             "crime_code": location.crime_code,
             "district_boundary": location.district_boundary,
-            "moment": str(location.moment),
+            "date": str(location.date),
             "stolen_value": location.stolen_value,
-            "street_block": location.street_block
+            "street_block": location.street_block,
+            "hour": location.hour
         }
     }
 
@@ -93,13 +105,16 @@ def refresh(request):
         location.street_block = props["LOCATION_B"]
         location.stolen_value = props["STOLEN_VAL"]
 
-        # Moment
+        # date
         date_match = DATE_REGEX.match(props["THEFT_DATE"])
         year = int(date_match.group(1))
         month = int(date_match.group(2))
         day = int(date_match.group(3))
         hour = int(props["THEFT_HOUR"])
-        location.moment = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=0, second=0)
+        location.date = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=0, second=0)
+
+        # Hour
+        location.hour = int(props["THEFT_HOUR"])
 
         locations.append(location)
 
@@ -141,7 +156,51 @@ def search(request):
     except ValueError:
         return HttpResponseBadRequest('Non-numeric radius parameter')
 
-    locations = get_locations(latitude, longitude, radius)
+    # Validate starting date - not a required field, requires format is YY-MM-DD
+    try:
+        start_date = request.GET['start_date']
+        start_date = datetime.datetime.strptime(start_date, '%y-%m-%d')
+    except KeyError:
+        start_date = None
+    except ValueError:
+        return HttpResponseBadRequest('Bad start date format - requires YY-MM-DD')
+
+    # Validate ending date - not a required field, requires format is YY-MM-DD
+    try:
+        end_date = request.GET['end_date']
+        end_date = datetime.datetime.strptime(end_date, '%y-%m-%d')
+    except KeyError:
+        end_date = None
+    except ValueError:
+        return HttpResponseBadRequest('Bad end date format - requires YY-MM-DD')
+
+
+    # Validate starting hour - not a required field, attempts to convert to integer
+    try:
+        start_hour = request.GET['start_hour']
+        start_hour = int(start_hour)
+    except KeyError:
+        start_hour = None
+    except ValueError:
+        return HttpResponseBadRequest('Non-numeric start hour parameter')
+
+
+
+    # Validate ending hour - not a required field, attempts to convert to integer
+    try:
+        end_hour = request.GET['end_hour']
+        end_hour = int(end_hour)
+    except ValueError:
+        return HttpResponseBadRequest('Non-numeric end hour parameter')
+    except KeyError:
+        end_hour = None
+
+    if (start_hour and not end_hour) or (end_hour and not start_hour):
+        return HttpResponseBadRequest("Requires both a start hour and end hour paramenter, or neither")
+
+
+
+    locations = get_locations(latitude, longitude, radius, start_date, end_date, start_hour, end_hour)
     points = locations_to_points(locations)
 
     return json_response(points)

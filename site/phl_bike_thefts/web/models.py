@@ -26,7 +26,10 @@ class TheftLocation(models.Model):
     # THEFT_DATE: The date of the theft (ISO 8601 format)
     # THEFT_YEAR: The year of the theft
     # THEFT_HOUR: The hour of the theft
-    moment = models.DateTimeField()
+    date = models.DateTimeField()
+
+    #Hour of theft as in integer, used for filtering
+    hour = models.IntegerField()
 
     # STOLEN_VAL: The value in dollars of the bicycle stolen
     stolen_value = models.IntegerField()
