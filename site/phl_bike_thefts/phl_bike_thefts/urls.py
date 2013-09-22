@@ -17,6 +17,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the a   dmin:
     url(r'^admin/', include(admin.site.urls)),
     url(r'refresh', "web.views.refresh"),
+    url(r'search', "web.views.search"),
     url(r'', "web.views.index"),
 
 )
