@@ -5,7 +5,46 @@
     </head>
 
     <body>
-        <a href="/refresh">Refresh the Data</a>
+
+        <h1>PHL Bike Theft REST API</h1>
+
+        <p>
+            Disclaimer: This is currently a prototype, developed in a rushed
+            few hours at a hackathon. There may be bugs or inaccuracies. The team that
+            developed it is planning to improve it in the coming months.
+        </p>
+
+        <h3>Info</h3>
+        <p>
+            This application provides a REST API around the existing bike theft data
+            provided by the City of Philadelphia. It's designed to make it easier
+            to query for data regarding bike theft locations. Instructions on
+            how to construct a query are listed below (results are returned
+            in a JSON array of GeoJSON Points).
+        </p>
+
+        <h3>Query Instructions</h3>
+        <p>URL: http://biketheft.jeffsbox.net/search</p>
+        <p>Query Paramters (e.g. put these in the URL)</p>
+        <ul>
+            <li>latitude=(latitude)</li>
+            <li>longitude=(longitude)</li>
+            <li>radius=(miles from latitude/longitude)</li>
+            <li>[optional] start_date=(YY-MM-DD)</li>
+            <li>[optional] end_date=(YY-MM-DD)</li>
+            <li>[optional, but requires next parameter too] start_hour=(0 through 23)</li>
+            <li>[optional] end_hour=(0 through 23)</li>
+        </ul>
+
+        <p>If no time parameters are set, all the matching data available within the radius is returned</p>
+
+        <p>Example URL:</p>
+        <p>http://biketheft.jeffsbox.net/search?latitude=39.929081852&longitude=-75.1672029&radius=0.1</p>
+
+        <h3>Actions</h3>
+        <ul>
+            <li><a href="/refresh">Refresh the Data</a> (this will wipe and reload the database)</li>
+        </ul>
     </body>
 
 </html>

@@ -198,8 +198,6 @@ def search(request):
     if (start_hour and not end_hour) or (end_hour and not start_hour):
         return HttpResponseBadRequest("Requires both a start hour and end hour paramenter, or neither")
 
-
-
     locations = get_locations(latitude, longitude, radius, start_date, end_date, start_hour, end_hour)
     points = locations_to_points(locations)
 
